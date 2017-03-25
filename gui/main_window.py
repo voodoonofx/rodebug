@@ -19,6 +19,7 @@ class MainWindow(object):
         self.visible = False
         self.attr_search = (0, '')
         self.debug_target_locked = False
+        self.debug_all_targets = False
         roplus.registerCallback('ROPlus.OnDrawGUI', self.onDrawGuiCallback)
 
     def show(self):
@@ -113,8 +114,13 @@ class MainWindow(object):
 
                 imgui.columns(1)
                 imgui.separator()
-                if imgui.checkbox('Debug Target Instead?', self.debug_target_locked):
+                if imgui.checkbox('Debug Target', self.debug_target_locked):
                     self.debug_target_locked = not self.debug_target_locked
+                    self.debug_all_targets = False
+                imgui.sameLine
+                if imgui.checkbox('Debug All Targets (Super Fucking Slow!)', self.debug_all_targets):
+                    self.debug_all_targets = not self.debug_all_targets
+                    self.debug_target_locked = False
 
                 imgui.text('Search Attributes: ')
                 imgui.sameLine()
@@ -123,25 +129,36 @@ class MainWindow(object):
                 # The real fun
                 if self.debug_target_locked:
                     if hasattr(player, 'targetLocked'):
-                        obj = player.targetLocked
+                        obj = [player.targetLocked]
                     else:
+                        obj = None
                         self.debug_target_locked = False
+                        imgui.text('No Target Locked.')
+                elif self.debug_all_targets:
+                    obj = BigWorld.entities.values()
                 else:
-                    obj = player  # vars(player).items()
-                if True:
+                    obj = [player]  # vars(player).items()
+                if obj:
                     IGNORED_ATTRS = ['abilityData']
-                    for item in dir(obj):
-                        if self.attr_search[0] and self.attr_search[1].lower() not in item.lower():  # If we're filtering results
+                    for o in obj:
+                        if o == player:
+                            imgui.text('Skipping: {0}'.format(o))
+                            imgui.separator()                    
                             continue
-                        if hasattr(obj, item):
-                            value = getattr(obj, item)
-                            if not(inspect.ismethod(value) or inspect.isfunction(value)):
-                                if item and value and not(item.startswith('__')) and item not in IGNORED_ATTRS:
-                                    try:
-                                        if isinstance(value, (dict, )):
-                                            imgui.text('{0} = {1}'.format(item, pformat(value)).strip())
-                                        else:
-                                            imgui.text('{0} = {1}'.format(item, value).strip())
-                                    except:
-                                        imgui.text('{0} = {1}'.format(item, '(failed)'))
+                        imgui.text(str(o))
+                        for item in dir(o):
+                            if self.attr_search[0] and self.attr_search[1].lower() not in item.lower():  # If we're filtering results
+                                continue
+                            if hasattr(o, item):
+                                value = getattr(o, item)
+                                if not(inspect.ismethod(value) or inspect.isfunction(value)):
+                                    if item and value and not(item.startswith('__')) and item not in IGNORED_ATTRS:
+                                        try:
+                                            if isinstance(value, (dict, )):
+                                                imgui.text('{0} = {1}'.format(item, pformat(value)).strip())
+                                            else:
+                                                imgui.text('{0} = {1}'.format(item, value).strip())
+                                        except:
+                                            imgui.text('{0} = {1}'.format(item, '(failed)'))
+                        imgui.separator()
             imgui.end()
