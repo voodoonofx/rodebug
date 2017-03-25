@@ -141,7 +141,7 @@ class MainWindow(object):
                 if obj:
                     IGNORED_ATTRS = ['abilityData']
                     for o in obj:
-                        if o == player:
+                        if (self.debug_target_locked or self.debug_all_targets) and o == player:
                             imgui.text('Skipping: {0}'.format(o))
                             imgui.separator()                    
                             continue
