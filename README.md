@@ -18,3 +18,6 @@ In a script, you'd be able to access any player attribute like this:
 player = BigWorld.player()
 player.attribute_name  # <-- Right here
 ```
+
+## Screenshots:
+![main window screenshot](https://github.com/voodoonofx/rodebug/blob/master/screenshots/main_window.jpg)
