@@ -8,7 +8,7 @@ import imgui
 # In game modules
 import data
 import BigWorld
-
+import gt
 
 from pprint import pformat
 
@@ -20,6 +20,7 @@ class MainWindow(object):
         self.attr_search = (0, '')
         self.debug_target_locked = False
         self.debug_all_targets = False
+        self.debug_custom = False
         roplus.registerCallback('ROPlus.OnDrawGUI', self.onDrawGuiCallback)
 
     def show(self):
@@ -79,7 +80,7 @@ class MainWindow(object):
                     # Draw some things about the target we have locked
                     imgui.text('targetLocked')
                     imgui.nextColumn()
-                    imgui.text('{0}'.format(target))
+                    imgui.text('{0} ({1})'.format(target.roleName, (target)))
                     imgui.nextColumn()
 
                     # target HP?
@@ -117,10 +118,15 @@ class MainWindow(object):
                 if imgui.checkbox('Debug Target', self.debug_target_locked):
                     self.debug_target_locked = not self.debug_target_locked
                     self.debug_all_targets = False
-                imgui.sameLine
+                    self.debug_custom = False
                 if imgui.checkbox('Debug All Targets (Super Fucking Slow!)', self.debug_all_targets):
-                    self.debug_all_targets = not self.debug_all_targets
                     self.debug_target_locked = False
+                    self.debug_all_targets = not self.debug_all_targets
+                    self.debug_custom = False
+                if imgui.checkbox('Debug Custom', self.debug_custom):
+                    self.debug_all_targets = False
+                    self.debug_target_locked = False
+                    self.debug_custom = not self.debug_custom
 
                 imgui.text('Search Attributes: ')
                 imgui.sameLine()
@@ -136,14 +142,17 @@ class MainWindow(object):
                         imgui.text('No Target Locked.')
                 elif self.debug_all_targets:
                     obj = BigWorld.entities.values()
+                elif self.debug_custom:
+                    # obj = [gt.gtDispatcher.dispatcher]
+                    obj = BigWorld.entity(player.id)  #[player.cell]
                 else:
                     obj = [player]  # vars(player).items()
                 if obj:
-                    IGNORED_ATTRS = ['abilityData']
+                    IGNORED_ATTRS = ['__builtins__', '__dict__']
                     for o in obj:
-                        if (self.debug_target_locked or self.debug_all_targets) and o == player:
+                        if (self.debug_target_locked or self.debug_all_targets or self.debug_custom) and o == player:
                             imgui.text('Skipping: {0}'.format(o))
-                            imgui.separator()                    
+                            imgui.separator()
                             continue
                         imgui.text(str(o))
                         for item in dir(o):
@@ -151,8 +160,8 @@ class MainWindow(object):
                                 continue
                             if hasattr(o, item):
                                 value = getattr(o, item)
-                                if not(inspect.ismethod(value) or inspect.isfunction(value)):
-                                    if item and value and not(item.startswith('__')) and item not in IGNORED_ATTRS:
+                                if True:  # not(inspect.ismethod(value) or inspect.isfunction(value)):
+                                    if item and value and item not in IGNORED_ATTRS: # and not(item.startswith('__')):
                                         try:
                                             if isinstance(value, (dict, )):
                                                 imgui.text('{0} = {1}'.format(item, pformat(value)).strip())
