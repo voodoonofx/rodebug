@@ -21,6 +21,7 @@ class MainWindow(object):
         self.debug_target_locked = False
         self.debug_all_targets = False
         self.debug_custom = False
+        self.hide_methods = False
         roplus.registerCallback('ROPlus.OnDrawGUI', self.onDrawGuiCallback)
 
     def show(self):
@@ -127,6 +128,8 @@ class MainWindow(object):
                     self.debug_all_targets = False
                     self.debug_target_locked = False
                     self.debug_custom = not self.debug_custom
+                if imgui.checkbox('Hide Methods', self.hide_methods):
+                    self.hide_methods = not self.hide_methods
 
                 imgui.text('Search Attributes: ')
                 imgui.sameLine()
@@ -156,10 +159,19 @@ class MainWindow(object):
                             continue
                         imgui.text(str(o))
                         for item in dir(o):
-                            if self.attr_search[0] and self.attr_search[1].lower() not in item.lower():  # If we're filtering results
-                                continue
                             if hasattr(o, item):
                                 value = getattr(o, item)
+                                search_conditions = [
+                                    self.attr_search[1].lower() in item.lower(),
+                                    self.attr_search[1].lower() in str(value).lower(),
+                                ]
+                                
+                                if self.hide_methods:
+                                    if callable(value):
+                                        continue
+
+                                if self.attr_search[0] and not any(search_conditions):
+                                    continue
                                 if True:  # not(inspect.ismethod(value) or inspect.isfunction(value)):
                                     if item and value and item not in IGNORED_ATTRS: # and not(item.startswith('__')):
                                         try:
